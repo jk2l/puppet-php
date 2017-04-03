@@ -91,6 +91,7 @@ define php::extension::config (
     match             => '^; priority\=',
     match_for_absence => true,
     multiple          => false,
+    notify            => Exec[$cmd],
   }
 
   ::php::config { $title:
@@ -111,9 +112,15 @@ define php::extension::config (
       'ALL' => 'cli',
       default => $sapi,
     }
-    exec { $cmd:
+    exec { "trigger exec for ext tool enable for ${so_name}":
+      command => "true",
       onlyif  => "${ext_tool_query} -s ${_sapi} -m ${so_name} | /bin/grep 'No module matches ${so_name}'",
-      require => ::Php::Config[$title],
+      notify  => Exec[$cmd]
+    }
+
+    exec { $cmd:
+      refreshonly => true,
+      require     => ::Php::Config[$title],
     }
 
     if $::php::fpm {
